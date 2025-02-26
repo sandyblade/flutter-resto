@@ -127,11 +127,8 @@ APP_BACKEND_URL=http://localhost:3000
 #### 7. Run Application 
 ```shell
 cd frontend
-flutter run
+flutter run -d chrome
 ```
-
-## run flutter run -d chrome to see in web browser
-
 
 <strong>To login in application, please use these credential : </strong> </br>
 email : admin@administrator.example.com </br>
