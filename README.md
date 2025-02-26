@@ -131,6 +131,11 @@ flutter run
 ```
 
 ## run flutter run -d chrome to see in web browser
+```shell
+to login in application, please use these credential :
+email : admin@administrator.example.com
+password : Qwerty12345#!
+```
 
 #### 8. Access application by entering [https://localhost:59845](https://localhost:59845) in the browser.
 
