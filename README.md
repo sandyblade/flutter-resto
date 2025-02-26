@@ -133,7 +133,7 @@ flutter run
 ## run flutter run -d chrome to see in web browser
 
 
-<strong>to login in application, please use these credential : </strong> </br>
+<strong>To login in application, please use these credential : </strong> </br>
 email : admin@administrator.example.com </br>
 password : Qwerty12345#! </br>
 
