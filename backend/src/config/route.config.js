@@ -17,6 +17,12 @@ const menu = require("../controllers/menu.controller.js");
 const order = require("../controllers/order.controller.js");
 const profile = require("../controllers/profile.controller.js");
 
+// Check Connection
+router.get("/ping", function (req, res) {
+    res.status(200).send({ message: "Connected Established !!" });
+    return;
+});
+
 // Auth Section
 router.post('/auth/login', auth.login);
 router.post('/auth/email/forgot', auth.forgot);
@@ -28,15 +34,14 @@ router.get('/history/detail/:id', history.detail);
 
 // Home Section
 router.get('/home/summary', home.summary);
-router.get('/home/table', home.table);
-router.get('/home/sell', home.sell);
 
 // Menu Section
 router.get('/menu/list', menu.list);
 
 // Order Section
+router.get('/order/pending', order.pending);
+router.get('/order/items', order.items);
 router.post('/order/save', order.save);
-router.delete('/order/cancel/:id', order.cancel);
 router.get('/order/detail/:id', order.detail);
 
 // Profile Section

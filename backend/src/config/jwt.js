@@ -26,6 +26,7 @@ function jwt() {
         algorithms: ['HS256']
     }).unless({
         path: [
+            '/api/ping',
             '/api/auth/login',
             '/api/auth/email/forgot',
             /^\/api\/auth\/email\/reset\/.*/,

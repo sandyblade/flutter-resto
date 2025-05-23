@@ -31,10 +31,14 @@ async function authUser(req) {
 
         if(user_id !== undefined){
             let user = await User.findOne({ _id: user_id })
-            const userObject = user.toObject()
-            delete userObject.password
-            delete userObject.role
-            return userObject
+
+            if(user !== undefined && user !== null){
+                const userObject = user.toObject()
+                delete userObject.password
+                delete userObject.role
+                return userObject
+            }
+
         }
 
     }

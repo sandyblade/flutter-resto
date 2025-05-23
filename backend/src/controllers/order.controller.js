@@ -15,6 +15,21 @@ const Table = require('../models/table.model')
 const Menu = require('../models/menu.model')
 const validate = require('validate.js');
 
+
+async function pending(req, res){
+    let datas = await Order.find({ status: 0 }).sort({ rating: -1 });
+    res.status(200).send(datas);
+    return;
+}
+
+
+async function items(req, res){
+    let tables = await Table.find({ status: 1})
+    let menus = await Menu.find({ status: 1 }).sort({ rating: -1 });
+    res.status(200).send({ tables: tables, menus: menus });
+    return;
+}
+
 async function save(req, res) {
 
     const rules = {
@@ -29,12 +44,6 @@ async function save(req, res) {
         },
         order_type: {
             presence: { message: "is required" },
-            length: {
-                minimum: 6,
-                maximum: 50,
-                tooShort: "needs to be at least %{count} characters long",
-                tooLong: "needs to be at most %{count} characters long"
-            }
         }
     }
 
@@ -58,20 +67,28 @@ async function save(req, res) {
     await Cart.deleteMany({ order_number: order_number })
 
     cartData.forEach(async (row) => {
+
+        let menu = await Menu.findOne({ name: row.name })
         let qty = row.qty
         let price = row.price
         let total = price * qty
-        let cartData = {
-            order_number: order_number,
-            menu_name: row.menu_name,
-            qty: qty,
-            price: price,
-            total: total
+
+        if(menu !== null){
+            let cartData = {
+                order_number: order_number,
+                menu_image: menu.image,
+                menu_name: menu.name,
+                qty: qty,
+                price: price,
+                total: total
+            }
+            await Cart.create(cartData);
         }
-        await Cart.create(cartData);
+
+       
         if(req.body.checkout){
             await Menu.updateOne(
-                { name: row.menu_name },  
+                { name: menu.name },  
                 { $inc: { rating: qty } } 
             );
         }
@@ -86,34 +103,37 @@ async function save(req, res) {
     })
 
     let orderCurrent = await Order.findOne({ order_number: order_number })
+    let tableNumber = req.body.table_number ? req.body.table_number : 'TAKE AWAY'
+    let status = parseInt(req.body.status)
 
     if(orderCurrent === null){
         let OrderData = {
             order_number: order_number,
-            table_number: req.body.table_number,
+            table_number: tableNumber,
             order_type: req.body.order_type,
             customer_name: req.body.customer_name,
             cashier_name: req.body.cashier_name,
             total_item: total_item,
             total_paid: total_paid,
-            status: req.body.checkout ? 1 : 0
+            status: req.body.status
         }
         await Order.create(OrderData);
     }else{
-        orderCurrent.table_number = req.body.table_number
+        orderCurrent.table_number = tableNumber
         orderCurrent.order_type = req.body.order_type
         orderCurrent.customer_name = req.body.customer_name
         orderCurrent.cashier_name = req.body.cashier_name
         orderCurrent.total_item = total_item
         orderCurrent.total_paid = total_paid
-        orderCurrent.status = req.body.checkout ? 1 : 0
+        orderCurrent.status = req.body.status
         await orderCurrent.save()
     }
 
-    if(req.body.checkout){
+
+    if(req.body.order_type === 'Dine In'){
         await Table.updateMany(
             { name: req.body.table_number }, 
-            { $set: { status: 1 } } 
+            { $set: { status: status} } 
         )
     }
 
@@ -121,29 +141,7 @@ async function save(req, res) {
     return;
 }
 
-async function cancel(req, res) {
 
-    let id = req.params.id;
-    let order = await Order.findOne({ _id: id })
-  
-    if(order === null){
-        res.status(400).json({ error: 'These order do not match our records.' });
-        return;
-    }
-
-    if(order.table_number){
-        await Order.updateMany(
-            { name: order.table_number }, 
-            { $set: { status: 1 } } 
-        )
-    }
-
-    await Cart.deleteMany({ order_number: order.order_number })
-    await Order.deleteOne({ _id: id })
-
-    res.status(200).send({ message: "Your order has been canceled." });
-    return;
-}
 
 async function detail(req, res) {
 
@@ -156,10 +154,14 @@ async function detail(req, res) {
     }
 
     let cart  = await Cart.find({ order_number: order.order_number })
+    let tables = await Table.find({})
+    let additional = await Menu.find({ status: 1})
 
     let payload = {
         order: order,
-        cart: cart
+        cart: cart,
+        tables: tables,
+        additional: additional
     }
 
     res.status(200).send(payload);
@@ -167,7 +169,8 @@ async function detail(req, res) {
 }
 
 module.exports = {
+    pending,
     save,
-    cancel,
-    detail
+    detail,
+    items
 }

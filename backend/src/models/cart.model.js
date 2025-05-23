@@ -15,6 +15,10 @@ const schema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    menu_image: {
+        type: String,
+        required: false,
+    },
     menu_name: {
         type: String,
         required: true,

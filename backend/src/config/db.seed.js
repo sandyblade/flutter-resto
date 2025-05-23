@@ -22,25 +22,23 @@ const MenuModel = require("../models/menu.model.js");
 async function createUser() {
 
     const total = await UserModel.countDocuments({});
-    const hashedPassword = bcrypt.hashSync("Qwerty12345#!", 10)
+    const hashedPassword = bcrypt.hashSync("Qwerty123!", 10)
     const genders = ["male", "female"]
     const max = 10
 
     if (total === 0) {
-        for (let i = 1; i <= max; i++) {
-            let genderIndex = Math.floor(Math.random() * (1 - 0 + 1)) + 0;
-            let formData = {
-                "name": faker.person.fullName({ sex: genders[genderIndex] }),
-                "email": i === 1 ? "admin@administrator.example.com" : faker.internet.email(),
-                "password": hashedPassword,
-                "role": i === 1 ? "ROLE_ADMIN" : "ROLE_USER",
-                "gender": genders[genderIndex],
-                "phone": faker.phone.number({ style: 'international' }),
-                "forgot_password_token": faker.string.uuid(),
-                "address": faker.location.streetAddress({ useFullAddress: true })
-            }
-            await UserModel.create(formData);
+        let genderIndex = Math.floor(Math.random() * (1 - 0 + 1)) + 0;
+        let email = "admin@administrator.example.com" 
+        let formData = {
+            "name": faker.person.fullName({ sex: genders[genderIndex] }),
+            "email": email.toLowerCase(),
+            "password": hashedPassword,
+            "gender": genders[genderIndex],
+            "phone": faker.phone.number({ style: 'international' }),
+            "forgot_password_token": faker.string.uuid(),
+            "address": faker.location.streetAddress({ useFullAddress: true })
         }
+        await UserModel.create(formData);
     }
 }
 
@@ -117,7 +115,7 @@ async function createMenu() {
             {
                 name: "Steak",
                 price: 4.9,
-                image: "https://5an9y4lf0n50.github.io/demo-images/demo-resto/steak.jpg",
+                image: "https://5an9y4lf0n50.github.io/demo-images/demo-resto/steak.jpeg",
                 category: 'Main Course',
                 description: faker.lorem.sentence()
             },
@@ -170,6 +168,7 @@ async function createOrder() {
                 let total = price * qty
                 let cartData = {
                     order_number: order_number,
+                    menu_image: menu[0].image,
                     menu_name: menu[0].name,
                     qty: qty,
                     price: price,

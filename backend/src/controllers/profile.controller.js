@@ -31,40 +31,16 @@ async function update(req, res) {
             email: { message: "is not valid" }
         },
         name: {
-            presence: { message: "is required" },
-            length: {
-                minimum: 6,
-                maximum: 120,
-                tooShort: "needs to be at least %{count} characters long",
-                tooLong: "needs to be at most %{count} characters long"
-            }
+            presence: { message: "is required" }
         },
         gender: {
             presence: { message: "is required" },
-            length: {
-                minimum: 4,
-                maximum: 10,
-                tooShort: "needs to be at least %{count} characters long",
-                tooLong: "needs to be at most %{count} characters long"
-            }
         },
         phone: {
             presence: { message: "is required" },
-            length: {
-                minimum: 7,
-                maximum: 20,
-                tooShort: "needs to be at least %{count} characters long",
-                tooLong: "needs to be at most %{count} characters long"
-            }
         },
         address: {
             presence: { message: "is required" },
-            length: {
-                minimum: 10,
-                maximum: 255,
-                tooShort: "needs to be at least %{count} characters long",
-                tooLong: "needs to be at most %{count} characters long"
-            }
         }
     }
 

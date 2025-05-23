@@ -65,7 +65,7 @@ async function login(req, res) {
     let token = jwt.sign({
         sub: user.id
     }, process.env.JWT_SECRET_KEY, {
-        expiresIn: '1d'
+        expiresIn: '365d'
     });
     res.send({
         ...omitPassword(user),
@@ -107,7 +107,7 @@ async function forgot(req, res) {
     user.forgot_password_expired = today
     await user.save()
 
-    res.status(200).send({ message: "We have e-mailed your password reset link!" });
+    res.status(200).send({ message: "We have e-mailed your password reset link!", token: token });
     return;
 }
 

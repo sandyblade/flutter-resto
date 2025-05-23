@@ -23,33 +23,23 @@ async function summary(req, res) {
     let total_orders = await Order.countDocuments({ status : 1 })
     let total_dine_in = await Order.countDocuments({ status : 1, order_type: "Dine In" })
     let total_take_away = await Order.countDocuments({ status : 1, order_type: "Take Away" })
+    let tables = await Table.find({})
+    let products = await Menu.find().sort({ rating: -1 });
     let total_sales = getTotal[0]?.totalSum || 0
 
     let payload = {
         total_sales: total_sales,
         total_orders: total_orders,
         total_dine_in: total_dine_in,
-        total_take_away: total_take_away
+        total_take_away: total_take_away,
+        tables: tables,
+        products: products
     }
 
     res.status(200).send(payload);
     return;
 }
 
-async function table(req, res) {
-    let tables = await Table.find({})
-    res.status(200).send(tables);
-    return;
-}
-
-async function sell(req, res) {
-    const products = await Menu.find().sort({ rating: -1 });
-    res.status(200).send(products);
-    return;
-}
-
 module.exports = {
-    summary,
-    table,
-    sell
+    summary
 }
