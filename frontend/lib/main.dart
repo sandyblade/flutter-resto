@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/pages/login_page.dart';
+import 'package:frontend/pages/main_app_page.dart';
 import 'package:lottie/lottie.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
-void main() {
+Future<void> main() async {
+  await dotenv.load(); // Load .env before runApp
   runApp(MyApp());
 }
 
@@ -20,6 +25,7 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appTitle = dotenv.env['APP_TITLE'] ?? '';
     return Scaffold(
       backgroundColor: const Color(0xff0d6efd),
       body: Column(
@@ -36,7 +42,7 @@ class SplashScreen extends StatelessWidget {
               children: [
                 Center(
                   child: Text(
-                    'Sandy Resto',
+                    appTitle,
                     style: TextStyle(fontSize: 25, color: Colors.white),
                   ),
                 ),
@@ -98,17 +104,41 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool logged = false;
   bool loading = true;
   bool disconnect = false;
+
+  void fetchData() async {
+    try {
+      final appBackendUrl = dotenv.env['APP_BACKEND_URL'] ?? '';
+      final response = await http.get(Uri.parse('$appBackendUrl/api/ping'));
+      Future.delayed(Duration(seconds: 2), () async {
+        if (response.statusCode == 200) {
+          final prefs = await SharedPreferences.getInstance();
+          setState(() {
+            loading = false;
+            disconnect = false;
+            logged = prefs.getString('token') != null;
+          });
+        } else {
+          setState(() {
+            disconnect = true;
+            loading = false;
+          });
+        }
+      });
+    } catch (e) {
+      setState(() {
+        disconnect = true;
+        loading = false;
+      });
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(seconds: 2), () {
-      setState(() {
-        loading = false;
-      });
-    });
+    fetchData();
   }
 
   @override
@@ -119,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (disconnect) {
         return DisconnectScreen();
       } else {
-        return LoginPage();
+        return logged ? MainAppPage() : LoginPage();
       }
     }
   }

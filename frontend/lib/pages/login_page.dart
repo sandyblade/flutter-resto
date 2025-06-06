@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/pages/forgot_password_page.dart';
+import 'package:frontend/pages/main_app_page.dart';
+import 'package:frontend/widgets/alert.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:toast/toast.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -18,7 +26,67 @@ class MyLoginPage extends StatefulWidget {
 }
 
 class _MyLoginPageState extends State<MyLoginPage> {
+  String _errorMessage = "";
+  bool _loading = false;
   bool _obscure = true;
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  void gotToMainPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const MainAppPage()),
+    );
+  }
+
+  void onSubmit() async {
+    try {
+      final email = _emailController.text;
+      final password = _passwordController.text;
+      if (_formKey.currentState!.validate()) {
+        setState(() {
+          _loading = true;
+          _errorMessage = "";
+        });
+        final appBackendUrl = dotenv.env['APP_BACKEND_URL'] ?? '';
+        final response = await http.post(
+          Uri.parse('$appBackendUrl/api/auth/login'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'email': email, 'password': password}),
+        );
+        if (response.statusCode == 200) {
+          Future.delayed(Duration(seconds: 2), () async {
+            final body = jsonDecode(response.body);
+            final token = body['token'].toString();
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('token', token);
+            setState(() {
+              _loading = false;
+            });
+            gotToMainPage();
+          });
+        } else {
+          Future.delayed(Duration(seconds: 2), () {
+            final body = jsonDecode(response.body);
+            final errorMessage = body['error'].toString();
+            setState(() {
+              _loading = false;
+              _errorMessage = errorMessage;
+            });
+          });
+        }
+      }
+    } catch (e) {
+      Future.delayed(Duration(seconds: 2), () {
+        setState(() {
+          _loading = false;
+          _errorMessage = e.toString();
+        });
+      });
+      throw Exception(e);
+    }
+  }
 
   @override
   void initState() {
@@ -27,6 +95,7 @@ class _MyLoginPageState extends State<MyLoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    ToastContext().init(context);
     return Scaffold(
       backgroundColor: const Color(0xfff8f9fa),
       body: Container(
@@ -59,71 +128,122 @@ class _MyLoginPageState extends State<MyLoginPage> {
             Container(
               margin: EdgeInsets.only(top: 30),
               padding: EdgeInsets.only(left: 30, right: 30),
-              child: TextFormField(
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'E-Mail Address',
-                  prefixIcon: Icon(Icons.email),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Email is required';
-                  }
-                  if (!RegExp(
-                    r'^[\w\.-]+@[\w\.-]+\.\w{2,4}$',
-                  ).hasMatch(value)) {
-                    return 'Enter a valid email address';
-                  }
-                  return null;
-                },
-              ),
+              child:
+                  _errorMessage == ""
+                      ? SizedBox()
+                      : MyAlert(
+                        message: _errorMessage,
+                        color: Colors.redAccent,
+                        icon: Icons.close,
+                      ),
             ),
-            Container(
-              margin: EdgeInsets.only(top: 15),
-              padding: EdgeInsets.only(left: 30, right: 30),
-              child: TextFormField(
-                obscureText: _obscure,
-                decoration: InputDecoration(
-                  labelText: 'Please Enter Your Password',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscure ? Icons.visibility_off : Icons.visibility,
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  Container(
+                    margin: EdgeInsets.only(top: 10),
+                    padding: EdgeInsets.only(left: 30, right: 30),
+                    child: TextFormField(
+                      enabled: !_loading,
+                      keyboardType: TextInputType.emailAddress,
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'E-Mail Address',
+                        prefixIcon: Icon(Icons.email),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Email is required';
+                        }
+                        if (!RegExp(
+                          r'^[\w\.-]+@[\w\.-]+\.\w{2,4}$',
+                        ).hasMatch(value)) {
+                          return 'Enter a valid email address';
+                        }
+                        return null;
+                      },
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscure = !_obscure;
-                      });
-                    },
                   ),
-                ),
-              ),
-            ),
-            Container(
-              width: double.infinity,
-              height: 50,
-              margin: EdgeInsets.only(top: 15),
-              padding: EdgeInsets.only(left: 30, right: 30),
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff0d6efd),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(width: 8),
-                    Text(
-                      'Sign In Now',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
+                  Container(
+                    margin: EdgeInsets.only(top: 15),
+                    padding: EdgeInsets.only(left: 30, right: 30),
+                    child: TextFormField(
+                      enabled: !_loading,
+                      controller: _passwordController,
+                      obscureText: _obscure,
+                      decoration: InputDecoration(
+                        labelText: 'Please Enter Your Password',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscure ? Icons.visibility_off : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscure = !_obscure;
+                            });
+                          },
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Password is required';
+                        }
+                        if (value.length < 6) {
+                          return 'Minimum 6 characters';
+                        }
+                        return null;
+                      },
                     ),
-                  ],
-                ),
+                  ),
+                  Container(
+                    width: double.infinity,
+                    height: 50,
+                    margin: EdgeInsets.only(top: 15),
+                    padding: EdgeInsets.only(left: 30, right: 30),
+                    child:
+                        _loading
+                            ? Shimmer.fromColors(
+                              baseColor: Colors.grey,
+                              highlightColor: Colors.white54,
+                              child: Container(
+                                width: 200,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                              ),
+                            )
+                            : ElevatedButton(
+                              onPressed: () {
+                                onSubmit();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xff0d6efd),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Sign In Now',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                  ),
+                ],
               ),
             ),
             Container(
