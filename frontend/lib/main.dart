@@ -112,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       final appBackendUrl = dotenv.env['APP_BACKEND_URL'] ?? '';
       final response = await http.get(Uri.parse('$appBackendUrl/api/ping'));
-      Future.delayed(Duration(seconds: 2), () async {
+      Future.delayed(Duration(seconds: 1), () async {
         if (response.statusCode == 200) {
           final prefs = await SharedPreferences.getInstance();
           setState(() {
