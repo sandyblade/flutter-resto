@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/pages/home_page.dart';
+import 'package:frontend/pages/history_page.dart';
+import 'package:frontend/pages/menu_page.dart';
+import 'package:frontend/pages/profile_page.dart';
 
 class MainAppPage extends StatelessWidget {
-  const MainAppPage({super.key});
+  final int tabIndex;
+
+  const MainAppPage({super.key, required this.tabIndex});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: MyMainAppPage());
+    return MaterialApp(home: MyMainAppPage(tabIndex: tabIndex));
   }
 }
 
 class MyMainAppPage extends StatefulWidget {
-  const MyMainAppPage({super.key});
+  final int tabIndex;
+
+  const MyMainAppPage({Key? key, required this.tabIndex}) : super(key: key);
 
   @override
   _MyMainAppPageState createState() => _MyMainAppPageState();
@@ -18,24 +26,31 @@ class MyMainAppPage extends StatefulWidget {
 
 class _MyMainAppPageState extends State<MyMainAppPage> {
   int _currentIndex = 0;
+  final GlobalKey<MyHomePageState> homeKey = GlobalKey<MyHomePageState>();
+  final GlobalKey<MyHistoryPageState> historyKey =
+      GlobalKey<MyHistoryPageState>();
+  final GlobalKey<MyMenuPageState> menuKey = GlobalKey<MyMenuPageState>();
+  final GlobalKey<MyProfilePageState> profileKey =
+      GlobalKey<MyProfilePageState>();
 
-  final List<Widget> _pages = const [
-    Center(child: Text('Home Page')),
-    Center(child: Text('History')),
-    Center(child: Text('Menu')),
-    Center(child: Text('Profile')),
-  ];
+  late final List<Widget> _pages;
 
   void _onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
     });
-    print("Tab changed to index: $index");
-    // Place your onChange logic here
+    if (index == 0) {
+      homeKey.currentState?.loadData();
+    } else if (index == 1) {
+      historyKey.currentState?.loadData();
+    } else if (index == 2) {
+      menuKey.currentState?.loadData();
+    } else if (index == 3) {
+      profileKey.currentState?.loadData();
+    }
   }
 
   void _onFabPressed() {
-    // Example action for FAB tap
     showDialog(
       context: context,
       builder:
@@ -55,6 +70,18 @@ class _MyMainAppPageState extends State<MyMainAppPage> {
   @override
   void initState() {
     super.initState();
+    setState(() {
+      _currentIndex = widget.tabIndex;
+    });
+    _pages = [
+      MyHomePage(key: homeKey),
+      MyHistoryPage(key: historyKey),
+      MyMenuPage(key: menuKey),
+      MyProfilePage(key: profileKey),
+    ];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      homeKey.currentState?.loadData();
+    });
   }
 
   @override
@@ -67,20 +94,16 @@ class _MyMainAppPageState extends State<MyMainAppPage> {
         backgroundColor: Colors.deepOrange,
         foregroundColor: Colors.white,
         child: Icon(Icons.restaurant_menu),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            100,
-          ), // large radius = circle/pill
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: const Color(0xff0d6efd),
-        selectedItemColor: Colors.white, // Active icon/text color
+        selectedItemColor: Colors.white,
         unselectedItemColor: Colors.blueAccent,
         currentIndex: _currentIndex,
-        onTap: _onTabTapped, // handle tab change
+        onTap: _onTabTapped,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),

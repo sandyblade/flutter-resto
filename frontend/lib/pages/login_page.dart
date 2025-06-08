@@ -36,7 +36,7 @@ class _MyLoginPageState extends State<MyLoginPage> {
   void gotToMainPage() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const MainAppPage()),
+      MaterialPageRoute(builder: (context) => const MainAppPage(tabIndex: 0)),
     );
   }
 
