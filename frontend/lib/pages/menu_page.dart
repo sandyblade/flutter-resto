@@ -218,6 +218,12 @@ class MyMenuPageState extends State<MyMenuPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    loadData();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff8f9fa),
