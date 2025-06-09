@@ -149,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (disconnect) {
         return DisconnectScreen();
       } else {
-        return logged ? MainAppPage(tabIndex: 0) : LoginPage();
+        return logged ? MainAppPage(tabIndex: 1) : LoginPage();
       }
     }
   }
