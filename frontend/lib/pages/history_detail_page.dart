@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:frontend/pages/history_page.dart';
+import 'package:frontend/pages/main_app_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
@@ -35,7 +35,7 @@ class _MyHistoryDetailPageState extends State<MyHistoryDetailPage> {
   void goToHistory() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => MyHistoryPage()),
+      MaterialPageRoute(builder: (context) => MainAppPage(tabIndex: 1)),
     );
   }
 
