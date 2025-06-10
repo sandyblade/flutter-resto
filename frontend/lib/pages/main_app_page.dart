@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/pages/home_page.dart';
 import 'package:frontend/pages/history_page.dart';
 import 'package:frontend/pages/menu_page.dart';
+import 'package:frontend/pages/order_page.dart';
 import 'package:frontend/pages/profile_page.dart';
 
 class MainAppPage extends StatelessWidget {
@@ -51,19 +52,9 @@ class _MyMainAppPageState extends State<MyMainAppPage> {
   }
 
   void _onFabPressed() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('FAB Pressed'),
-            content: const Text('You pressed the floating action button!'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
-              ),
-            ],
-          ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => OrderPage()),
     );
   }
 

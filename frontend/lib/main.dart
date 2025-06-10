@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/pages/login_page.dart';
 import 'package:frontend/pages/main_app_page.dart';
+import 'package:frontend/pages/order_page.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -149,7 +150,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (disconnect) {
         return DisconnectScreen();
       } else {
-        return logged ? MainAppPage(tabIndex: 1) : LoginPage();
+        return logged ? OrderPage() : LoginPage();
       }
     }
   }
