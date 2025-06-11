@@ -1,3 +1,11 @@
+/// This file is part of the Sandy Andryanto Resto Application.
+///
+/// Author:     Sandy Andryanto <sandy.andryanto.blade@gmail.com>
+/// Copyright:  2025
+///
+/// For full copyright and license information,
+/// please view the LICENSE.md file distributed with this source code.
+///
 import 'package:flutter/material.dart';
 import 'package:frontend/pages/history_detail_page.dart';
 import 'package:frontend/pages/login_page.dart';
@@ -78,7 +86,7 @@ class MyHistoryPageState extends State<MyHistoryPage> {
         setState(() {
           loading = false;
           items = [...items, ...itemsCast];
-          hasMore = itemsCast.length == 0;
+          hasMore = itemsCast.length > 0;
         });
       });
     } catch (e) {

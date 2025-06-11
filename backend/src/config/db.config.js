@@ -1,5 +1,5 @@
 /**
- * This file is part of the Sandy Andryanto Blog Application.
+ * This file is part of the Sandy Andryanto Resto Application.
  *
  * @author     Sandy Andryanto <sandy.andryanto.blade@gmail.com>
  * @copyright  2025

@@ -1,3 +1,11 @@
+/// This file is part of the Sandy Andryanto Resto Application.
+///
+/// Author:     Sandy Andryanto <sandy.andryanto.blade@gmail.com>
+/// Copyright:  2025
+///
+/// For full copyright and license information,
+/// please view the LICENSE.md file distributed with this source code.
+///
 import 'package:flutter/material.dart';
 import 'package:frontend/pages/main_app_page.dart';
 import 'package:frontend/pages/login_page.dart';
@@ -5,8 +13,11 @@ import 'package:frontend/widgets/rating_widget.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:frontend/widgets/alert.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:math';
+import 'package:intl/intl.dart';
 
 class OrderPage extends StatelessWidget {
   const OrderPage({super.key});
@@ -25,15 +36,100 @@ class MyOrderPage extends StatefulWidget {
 }
 
 class _MyOrderPageState extends State<MyOrderPage> {
+  String? _selectedTable;
+  String? _selectedOrderType;
+  String _errorMessage = "";
+  String _successMessage = "";
+  bool _loadingSubmit = false;
   String category = "all";
   int currentIndex = 0;
   int maxRating = 0;
   double totalPaid = 0;
   bool loading = true;
+  List<Map<String, dynamic>> tables = [];
   List<Map<String, dynamic>> items = [];
   List<Map<String, dynamic>> originals = [];
   List<Map<String, dynamic>> orders = [];
-  TextEditingController _searchController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _orderNumberController = TextEditingController();
+  final TextEditingController _customerNameController = TextEditingController();
+  final TextEditingController _totalPaidController = TextEditingController();
+
+  int randomIntFromInterval(int min, int max) {
+    final random = Random();
+    return min + random.nextInt(max - min + 1);
+  }
+
+  void goToMainApp() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => MainAppPage(tabIndex: 0)),
+    );
+  }
+
+  void onSubmit() async {
+    try {
+      if (_formKey.currentState!.validate()) {
+        setState(() {
+          _loadingSubmit = true;
+          _successMessage = "";
+          _errorMessage = "";
+        });
+        final appBackendUrl = dotenv.env['APP_BACKEND_URL'] ?? '';
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token');
+        final formBody = {
+          'checkout': _selectedOrderType == 'Take Away',
+          'order_number': _orderNumberController.text,
+          'customer_name': _customerNameController.text,
+          'order_type': _selectedOrderType,
+          'status': _selectedOrderType == 'Take Away' ? 1 : 0,
+          'cart': orders,
+          'table_number': _selectedTable,
+          'total_paid': double.parse(_totalPaidController.text.toString()),
+        };
+
+        final response = await http.post(
+          Uri.parse('$appBackendUrl/api/order/save'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode(formBody),
+        );
+
+        if (response.statusCode == 200) {
+          Future.delayed(Duration(seconds: 1), () async {
+            final body = jsonDecode(response.body);
+            final message = body['message'].toString();
+            setState(() {
+              _loadingSubmit = false;
+              _successMessage = message;
+            });
+            await Future.delayed(Duration(seconds: 2));
+            goToMainApp();
+          });
+        } else {
+          Future.delayed(Duration(seconds: 2), () {
+            final body = jsonDecode(response.body);
+            final errorMessage = body['error'].toString();
+            setState(() {
+              _loadingSubmit = false;
+              _errorMessage = errorMessage;
+            });
+          });
+        }
+      }
+    } catch (e) {
+      Future.delayed(Duration(seconds: 2), () {
+        setState(() {
+          _loadingSubmit = false;
+          _errorMessage = e.toString();
+        });
+      });
+      throw Exception(e);
+    }
+  }
 
   void loadData() async {
     try {
@@ -50,6 +146,11 @@ class _MyOrderPageState extends State<MyOrderPage> {
           'Authorization': 'Bearer $token',
         },
       );
+      final indexes = randomIntFromInterval(1, 1000);
+      final orderNumberGenerate = indexes.toString().padLeft(5, '0');
+      final dateIndex = DateFormat('yyyyMMdd').format(DateTime.now());
+      final orderNumber = "$dateIndex$orderNumberGenerate";
+      final customerName = "Customer $dateIndex";
       Future.delayed(Duration(seconds: 1), () {
         final body = jsonDecode(response.body);
         final itemsCast = body.cast<Map<String, dynamic>>();
@@ -58,6 +159,35 @@ class _MyOrderPageState extends State<MyOrderPage> {
           items = itemsCast;
           originals = itemsCast;
           maxRating = int.parse(itemsCast[0]['rating'].toString());
+          _customerNameController.text = customerName;
+          _orderNumberController.text = orderNumber;
+          _totalPaidController.text = "0.0";
+        });
+      });
+    } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      gotToLogin();
+    }
+  }
+
+  void loadTable() async {
+    try {
+      final appBackendUrl = dotenv.env['APP_BACKEND_URL'] ?? '';
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final response = await http.get(
+        Uri.parse('$appBackendUrl/api/home/table'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      Future.delayed(Duration(seconds: 1), () {
+        final body = jsonDecode(response.body);
+        final tableCast = body.cast<Map<String, dynamic>>();
+        setState(() {
+          tables = tableCast;
         });
       });
     } catch (e) {
@@ -84,6 +214,7 @@ class _MyOrderPageState extends State<MyOrderPage> {
     setState(() {
       orders = orders;
       totalPaid = sum;
+      _totalPaidController.text = totalPaid.toStringAsFixed(2);
     });
   }
 
@@ -105,6 +236,7 @@ class _MyOrderPageState extends State<MyOrderPage> {
       setState(() {
         orders = orders;
         totalPaid = sum;
+        _totalPaidController.text = totalPaid.toStringAsFixed(2);
       });
     }
   }
@@ -127,6 +259,7 @@ class _MyOrderPageState extends State<MyOrderPage> {
     setState(() {
       orders = orders;
       totalPaid = sum;
+      _totalPaidController.text = totalPaid.toStringAsFixed(2);
     });
   }
 
@@ -201,6 +334,7 @@ class _MyOrderPageState extends State<MyOrderPage> {
               totalPaid = double.parse(
                 menu['price']['\$numberDecimal'].toString(),
               );
+              _totalPaidController.text = totalPaid.toStringAsFixed(2);
             });
           } else {
             List<Map<String, dynamic>> filter =
@@ -220,6 +354,7 @@ class _MyOrderPageState extends State<MyOrderPage> {
                 totalPaid =
                     totalPaid +
                     double.parse(menu['price']['\$numberDecimal'].toString());
+                _totalPaidController.text = totalPaid.toStringAsFixed(2);
               });
             } else {
               double sum = 0;
@@ -238,6 +373,7 @@ class _MyOrderPageState extends State<MyOrderPage> {
               setState(() {
                 orders = orders;
                 totalPaid = sum;
+                _totalPaidController.text = totalPaid.toStringAsFixed(2);
               });
             }
           }
@@ -308,6 +444,10 @@ class _MyOrderPageState extends State<MyOrderPage> {
   }
 
   Widget _buildCardOrder(Map<String, dynamic> menu) {
+    final totalText = double.parse(menu['total'].toString()).toStringAsFixed(2);
+    final priceText = double.parse(
+      menu['price']['\$numberDecimal'].toString(),
+    ).toStringAsFixed(2);
     return Card(
       color: const Color(0xffF8F8FF),
       margin: EdgeInsets.only(bottom: 12),
@@ -354,10 +494,18 @@ class _MyOrderPageState extends State<MyOrderPage> {
                     ),
                   ),
                   Text(
-                    "\$${menu['price']['\$numberDecimal']} x ${menu['qty'].toString()}",
+                    "\$$priceText x ${menu['qty'].toString()}",
                     textAlign: TextAlign.end,
                     style: TextStyle(
                       color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    "\$$totalText",
+                    textAlign: TextAlign.end,
+                    style: TextStyle(
+                      color: Colors.deepOrange,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -594,13 +742,242 @@ class _MyOrderPageState extends State<MyOrderPage> {
   }
 
   Widget tabCheckout() {
-    return Scaffold(
-      backgroundColor: const Color(0xfff8f9fa),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Text(''),
-      ),
-    );
+    if (orders.isEmpty) {
+      return Scaffold(
+        backgroundColor: const Color(0xfff8f9fa),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                margin: EdgeInsets.only(top: 0),
+                child: Center(
+                  child: Text(
+                    "No Orders",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 20, color: Colors.deepPurple),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      return Scaffold(
+        backgroundColor: const Color(0xfff8f9fa),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                margin: EdgeInsets.only(top: 30),
+                child: Center(
+                  child: Text(
+                    "Please fill in the fields below to create order.",
+                    style: TextStyle(fontSize: 13, color: Colors.black),
+                  ),
+                ),
+              ),
+              if (_errorMessage != "")
+                Container(
+                  margin: EdgeInsets.only(bottom: 1),
+                  padding: EdgeInsets.only(left: 30, right: 30),
+                  child: MyAlert(
+                    message: _errorMessage,
+                    color: Colors.redAccent,
+                    icon: Icons.close,
+                  ),
+                ),
+              if (_successMessage != "")
+                Container(
+                  margin: EdgeInsets.only(bottom: 1),
+                  padding: EdgeInsets.only(left: 30, right: 30),
+                  child: MyAlert(
+                    message: _successMessage,
+                    color: Colors.green,
+                    icon: Icons.check,
+                  ),
+                ),
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    Container(
+                      margin: EdgeInsets.only(top: 15),
+                      padding: EdgeInsets.only(left: 30, right: 30),
+                      child: TextFormField(
+                        readOnly: true,
+                        enabled: !_loadingSubmit,
+                        keyboardType: TextInputType.name,
+                        controller: _orderNumberController,
+                        decoration: InputDecoration(
+                          labelText: 'Order Number',
+                          prefixIcon: Icon(Icons.check_box),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      margin: EdgeInsets.only(top: 15),
+                      padding: EdgeInsets.only(left: 30, right: 30),
+                      child: TextFormField(
+                        enabled: !_loadingSubmit,
+                        keyboardType: TextInputType.name,
+                        controller: _customerNameController,
+                        decoration: InputDecoration(
+                          labelText: 'Customer Name',
+                          prefixIcon: Icon(Icons.person),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Customer Name is required';
+                          }
+                          if (value.length < 3) {
+                            return 'Customer Name must be at least 3 characters';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    Container(
+                      margin: EdgeInsets.only(top: 15),
+                      padding: EdgeInsets.only(left: 30, right: 30),
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedOrderType,
+                        decoration: InputDecoration(
+                          enabled: !_loadingSubmit,
+                          labelText: 'Order Type',
+                          prefixIcon: Icon(Icons.local_cafe),
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: "Dine In",
+                            child: Text("Dine In"),
+                          ),
+                          DropdownMenuItem(
+                            value: "Take Away",
+                            child: Text("Take Away"),
+                          ),
+                        ],
+                        onChanged:
+                            (value) =>
+                                setState(() => _selectedOrderType = value),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Order Typ is required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    if (_selectedOrderType == 'Dine In')
+                      Container(
+                        margin: EdgeInsets.only(top: 15),
+                        padding: EdgeInsets.only(left: 30, right: 30),
+                        child: DropdownButtonFormField<dynamic>(
+                          decoration: InputDecoration(
+                            enabled: !_loadingSubmit,
+                            labelText: 'Table Number',
+                            prefixIcon: Icon(Icons.restaurant),
+                            border: OutlineInputBorder(),
+                          ),
+                          value: _selectedTable,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedTable = value;
+                            });
+                          },
+                          items:
+                              tables.map<DropdownMenuItem<dynamic>>((item) {
+                                return DropdownMenuItem<dynamic>(
+                                  value: item['name'],
+                                  child: Text(item['name']),
+                                );
+                              }).toList(),
+                        ),
+                      ),
+                    Container(
+                      margin: EdgeInsets.only(top: 15),
+                      padding: EdgeInsets.only(left: 30, right: 30),
+                      child: TextFormField(
+                        readOnly: true,
+                        enabled: !_loadingSubmit,
+                        keyboardType: TextInputType.name,
+                        controller: _totalPaidController,
+                        decoration: InputDecoration(
+                          labelText: 'Total Paid',
+                          prefixIcon: Icon(Icons.payments),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    if (_selectedOrderType == 'Dine In' ||
+                        _selectedOrderType == 'Take Away')
+                      Container(
+                        width: double.infinity,
+                        height: 50,
+                        margin: EdgeInsets.only(top: 15),
+                        padding: EdgeInsets.only(left: 30, right: 30),
+                        child:
+                            _loadingSubmit
+                                ? Shimmer.fromColors(
+                                  baseColor: Colors.grey,
+                                  highlightColor: Colors.white54,
+                                  child: Container(
+                                    width: 200,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue,
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                  ),
+                                )
+                                : ElevatedButton(
+                                  onPressed: () async {
+                                    final confirmed = await showConfirmDialog(
+                                      context,
+                                      "Are you sure you want to process this order ?",
+                                    );
+                                    if (confirmed == true) {
+                                      onSubmit();
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xff0d6efd),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(width: 8),
+                                      Text(
+                                        _selectedOrderType == 'Take Away'
+                                            ? 'Checkout'
+                                            : 'Save Order',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -699,11 +1076,41 @@ class _MyOrderPageState extends State<MyOrderPage> {
     );
   }
 
+  Future<bool?> showConfirmDialog(BuildContext context, String message) {
+    return showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Order Confirmation'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                child: Text('Cancel'),
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              ElevatedButton(
+                child: Text('Ok, Continue'),
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _orderNumberController.dispose();
+    _customerNameController.dispose();
+    _totalPaidController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       loadData();
+      loadTable();
     });
   }
 }

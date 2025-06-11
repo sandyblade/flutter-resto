@@ -1,7 +1,14 @@
+/// This file is part of the Sandy Andryanto Resto Application.
+///
+/// Author:     Sandy Andryanto <sandy.andryanto.blade@gmail.com>
+/// Copyright:  2025
+///
+/// For full copyright and license information,
+/// please view the LICENSE.md file distributed with this source code.
+///
 import 'package:flutter/material.dart';
 import 'package:frontend/pages/login_page.dart';
 import 'package:frontend/pages/main_app_page.dart';
-import 'package:frontend/pages/order_page.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -150,7 +157,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (disconnect) {
         return DisconnectScreen();
       } else {
-        return logged ? OrderPage() : LoginPage();
+        return logged ? MainAppPage(tabIndex: 0) : LoginPage();
       }
     }
   }

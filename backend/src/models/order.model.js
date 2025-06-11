@@ -1,5 +1,5 @@
 /**
- * This file is part of the Sandy Andryanto Blog Application.
+ * This file is part of the Sandy Andryanto Resto Application.
  *
  * @author     Sandy Andryanto <sandy.andryanto.blade@gmail.com>
  * @copyright  2025
@@ -8,7 +8,7 @@
  * please view the LICENSE.md file that was distributed
  * with this source code.
  */
-
+ 
 const mongoose = require('mongoose');
 const schema = new mongoose.Schema({
     order_number: {

@@ -1,5 +1,5 @@
 /**
- * This file is part of the Sandy Andryanto Blog Application.
+ * This file is part of the Sandy Andryanto Resto Application.
  *
  * @author     Sandy Andryanto <sandy.andryanto.blade@gmail.com>
  * @copyright  2025
@@ -40,6 +40,13 @@ async function summary(req, res) {
     return;
 }
 
+async function table(req, res) {
+    let payload = await Table.find({})
+    res.status(200).send(payload);
+    return;
+}
+
 module.exports = {
-    summary
+    summary,
+    table
 }

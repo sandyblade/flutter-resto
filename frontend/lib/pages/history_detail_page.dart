@@ -1,3 +1,12 @@
+/// This file is part of the Sandy Andryanto Resto Application.
+///
+/// Author:     Sandy Andryanto <sandy.andryanto.blade@gmail.com>
+/// Copyright:  2025
+///
+/// For full copyright and license information,
+/// please view the LICENSE.md file distributed with this source code.
+///
+///
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -91,9 +100,13 @@ class _MyHistoryDetailPageState extends State<MyHistoryDetailPage> {
   }
 
   Widget _buildCard(Map<String, dynamic> menu) {
-    final priceText = menu['price']['\$numberDecimal'].toString();
+    final priceText = double.parse(
+      menu['price']['\$numberDecimal'].toString(),
+    ).toStringAsFixed(2);
     final qtyText = menu['qty'].toString();
-    final totalText = menu['total']['\$numberDecimal'].toString();
+    final totalText = double.parse(
+      menu['total']['\$numberDecimal'].toString(),
+    ).toStringAsFixed(2);
     return Card(
       color: const Color(0xffF8F8FF),
       margin: EdgeInsets.only(bottom: 12),
@@ -194,7 +207,10 @@ class _MyHistoryDetailPageState extends State<MyHistoryDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final totalPaidText = loading ? '0' : order['total_paid'].toString();
+    final totalPaidText =
+        loading
+            ? '0'
+            : double.parse(order['total_paid'].toString()).toStringAsFixed(2);
     return Scaffold(
       backgroundColor: const Color(0xfff8f9fa),
       body: SingleChildScrollView(

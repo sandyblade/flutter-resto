@@ -1,9 +1,19 @@
+/// This file is part of the Sandy Andryanto Resto Application.
+///
+/// Author:     Sandy Andryanto <sandy.andryanto.blade@gmail.com>
+/// Copyright:  2025
+///
+/// For full copyright and license information,
+/// please view the LICENSE.md file distributed with this source code.
+///
 import 'package:flutter/material.dart';
+import 'package:frontend/pages/checkout_page.dart';
 import 'package:frontend/pages/login_page.dart';
 import 'package:frontend/widgets/rating_widget.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:frontend/widgets/alert.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -70,6 +80,15 @@ class MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  void goToCheckOut(String tableNumber) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CheckoutPage(tableNumber: tableNumber),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -117,6 +136,32 @@ class MyHomePageState extends State<MyHomePage> {
                               : Colors.redAccent,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
+                    ),
+                  ),
+                  Container(
+                    width: double.infinity,
+                    height: 20,
+                    margin: EdgeInsets.only(top: 15),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        if (int.parse(item['status'].toString()) == 0) {
+                          goToCheckOut(item['name']);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        iconColor: Colors.white,
+                        backgroundColor:
+                            int.parse(item['status'].toString()) == 0
+                                ? Colors.green
+                                : Colors.grey,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                      label: const Text(
+                        'Checkout',
+                        style: TextStyle(fontSize: 10, color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -315,6 +360,14 @@ class MyHomePageState extends State<MyHomePage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            Container(
+              margin: EdgeInsets.only(top: 10),
+              child: MyAlert(
+                message: "Summary",
+                color: Colors.blueAccent,
+                icon: Icons.dashboard,
+              ),
+            ),
             Card(
               color: const Color(0xffF8F8FF),
               elevation: 4,
@@ -465,6 +518,14 @@ class MyHomePageState extends State<MyHomePage> {
                 ),
               ),
             ),
+            Container(
+              margin: EdgeInsets.only(top: 10),
+              child: MyAlert(
+                message: "Dine In",
+                color: Colors.blueAccent,
+                icon: Icons.table_restaurant,
+              ),
+            ),
             Card(
               color: const Color(0xffF8F8FF),
               elevation: 4,
@@ -493,6 +554,14 @@ class MyHomePageState extends State<MyHomePage> {
                             _buildRow(6),
                           ],
                 ),
+              ),
+            ),
+            Container(
+              margin: EdgeInsets.only(top: 10),
+              child: MyAlert(
+                message: "Favorite Menu",
+                color: Colors.blueAccent,
+                icon: Icons.fastfood,
               ),
             ),
             Padding(
