@@ -115,13 +115,15 @@ nodemon
 
 #### 5. Install frontend dependencies, please move to directory flutter-resto/frontend
 ```shell
-npm install
+flutter pub get
 ```
 
-#### 6. Make a .env.local file and customize its settings 
+#### 6. Make a .env inside assets/.env file and customize its settings 
 ```shell
-APP_TITLE="Favorite Resto"
-APP_BACKEND_URL=http://localhost:3000
+APP_ENV="development"
+APP_TITLE="Resto Application"
+APP_AUTHOR="Sandy Andryanto"
+APP_BACKEND_URL="http://localhost:8000"
 ```
 
 #### 7. Run Application 
@@ -132,7 +134,7 @@ flutter run -d chrome
 
 <strong>To login in application, please use these credential : </strong> </br>
 email : admin@administrator.example.com </br>
-password : Qwerty12345#! </br>
+password : Qwerty123! </br>
 
 
 #### 8. Access application by entering [https://localhost:59845](https://localhost:59845) in the browser.
